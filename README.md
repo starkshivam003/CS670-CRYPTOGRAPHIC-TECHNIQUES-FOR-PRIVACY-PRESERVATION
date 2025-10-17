@@ -104,3 +104,74 @@ Secure multiplication is the most complex primitive and is handled differently i
 - **Efficiency:**
     - The performance of both protocols is dominated by the number of secure multiplications. The online phase is extremely fast, involving only lightweight arithmetic and a constant number of communication rounds per multiplication.
     - The main difference lies in the setup and trust model. The additive scheme requires a dedicated, trusted dealer for preprocessing, but the online phase only involves two parties. The replicated scheme distributes trust among three parties and does not require a separate dealer, but all three parties must participate in every multiplication. For high-latency networks, the number of rounds is the main bottleneck, making both protocols very efficient for the online phase.
+
+# CS670 Assignment 2: Distributed Point unctions (DPF) 
+
+
+
+## 1. Objective
+
+Write a C++ program named `gen_queries.cpp` that generates and verifies Distributed Point Function (DPF) queries.
+
+The program must:
+* Accept two command-line arguments: `<DPF_size>` (domain size) and `<num_DPFs>` (number of instances to generate).
+* For each instance, randomly select a target index and a target value within the domain.
+* Implement a `generateDPF()` function to create two DPF keys (`k0`, `k1`) that jointly represent the point function.
+* Implement an `EvalFull()` function that evaluates both keys across the entire domain, combines their outputs and verifies that the result is the target value at the chosen index and zero everywhere else.
+* Print "Test Passed" or "Test Failed" for each instance to confirm correctness.
+* Use a cryptographically secure random number generator.
+
+---
+
+
+## 2. Code Explanation
+
+`gen_queries.cpp` implemets a **Distributed Point Function (DPF)** using a technique based on a **GGM binary tree**. It takes a function that has a non-zero value at only a single, secret point ($f(\alpha) = \beta$) and is zero everywhere else, and split it into two secret keys, `k0` and `k1`.
+
+Neither key by itself reveals the secret point $\alpha$ or the value $\beta$. However, when the outputs from evaluating both keys are combined (using XOR), they perfectly reconstruct the original function's output.
+
+$Eval(k_0, x) \oplus Eval(k_1, x) = \begin{cases} \beta & \text{if } x = \alpha \\ 0 & \text{if } x \neq \alpha \end{cases}$
+
+
+
+
+---
+
+### Code Breakdown
+
+1.  **`generateDPF(location, value)`**: This is the key generation function.
+    * It starts with two random root seeds, one for `k0` and one for `k1`.
+    * It traverses a conceptual binary tree whose depth is determined by `dpf_size`. The path to the leaf corresponding to the secret `location` is called the "special path".
+    * At each level, it uses a Pseudorandom Generator (`prg_expand` which uses SHA-256) to create child seeds.
+    * It calculates **correction words** (`scw`, `tL_cw`). These are special values that are stored in the keys. Their purpose is to ensure that on all paths *except* the special path, the outputs of both keys will be identical, so they cancel out to zero when XORed.
+    * It saves these correction words into both keys.
+    * Finally, it calculates a `final_cw` to make sure that on the special path, the combined output equals the target `value`.
+
+2.  **`evalDPF(key, index)`**: This function evaluates a single key for a given `index`.
+    * It traverses the same conceptual binary tree, following the path dictated by the bits of the `index`.
+    * At each step, it expands a seed to get child seeds.
+    * Crucially, if its internal "flag" is active, it **applies the correction words** from the key. This step alters the path's evaluation to either cancel out with the other key (on non-special paths) or contribute to the final value (on the special path).
+    * The final value at the leaf is the result.
+
+3.  **`EvalFull()`**: This is the testing function.
+    * It loops through every single point in the domain (from 0 to `dpf_size` - 1).
+    * For each point, it calls `evalDPF` on both `k0` and `k1` and XORs their results.
+    * It verifies that the combined result is correct: it must be the target `value` at the secret `location` and zero everywhere else.
+    * It prints "Test Passed" if all checks succeed, otherwise it prints "Test Failed".
+
+4.  **`main()`**: The main function drives the program.
+    * It reads the `<DPF_size>` and `<num_DPFs>` from the command line.
+    * It runs a loop to create and test the specified number of DPFs.
+    * For each test, it picks a random location and value, calls `generateDPF`, and then uses `EvalFull` to verify the result.
+
+
+## 3. How to compile the code and run it?
+
+* To compile the code on terminal where code is downloaded and unzipped:
+```bash
+    g++ -std=c++20 gen_queries.cpp -o gen_queries -lcrypto  
+```
+* To run the code on terminal:
+```bash
+    ./gen_queries <DPF_size> <num_DPFs>
+```
