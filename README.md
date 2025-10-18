@@ -105,7 +105,7 @@ Secure multiplication is the most complex primitive and is handled differently i
     - The performance of both protocols is dominated by the number of secure multiplications. The online phase is extremely fast, involving only lightweight arithmetic and a constant number of communication rounds per multiplication.
     - The main difference lies in the setup and trust model. The additive scheme requires a dedicated, trusted dealer for preprocessing, but the online phase only involves two parties. The replicated scheme distributes trust among three parties and does not require a separate dealer, but all three parties must participate in every multiplication. For high-latency networks, the number of rounds is the main bottleneck, making both protocols very efficient for the online phase.
 
-# CS670 Assignment 2: Distributed Point unctions (DPF) 
+# CS670 Assignment 2: Distributed Point Functions (DPF) 
 
 
 
