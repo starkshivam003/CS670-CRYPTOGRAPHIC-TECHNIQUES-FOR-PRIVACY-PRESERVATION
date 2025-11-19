@@ -1,0 +1,33 @@
+services:
+  gen_data_replicated:
+    build: .
+    command: sh -c "mkdir -p output && ./gen_data_replicated 10 10 5"
+    volumes:
+      - ./output:/app/output
+
+  p0:
+    build: .
+    command: ./p_replicated 0 10 10 5 3
+    networks:
+      - mpc_net
+    depends_on:
+      - gen_data_replicated
+
+  p1:
+    build: .
+    command: ./p_replicated 1 10 10 5 3
+    networks:
+      - mpc_net
+    depends_on:
+      - gen_data_replicated
+
+  p2:
+    build: .
+    command: ./p_replicated 2 10 10 5 3
+    networks:
+      - mpc_net
+    depends_on:
+      - gen_data_replicated
+
+networks:
+  mpc_net:
