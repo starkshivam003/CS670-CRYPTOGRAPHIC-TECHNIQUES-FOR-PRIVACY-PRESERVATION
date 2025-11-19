@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  gen_data:
+    build: .
+    command: ["./gen_data", "1", "1", "8"]
+    volumes:
+      - ./output/:/workspace/output/
+
+  p2:
+    build: .
+    command: ["./p2", "1", "1", "8"]
+    ports:
+      - "9002:9002"
+    volumes:
+      - ./output/:/workspace/output/
+    depends_on:
+      - gen_data
+
+  p0:
+    build: .
+    command: ["./p0", "1", "1", "8", "1", "p2", "9002"]
+    volumes:
+      - ./output/:/workspace/output/
+    depends_on:
+      - p2
+
+  p1:
+    build: .
+    command: ["./p1", "1", "1", "8", "1", "p2", "9002"]
+    volumes:
+      - ./output/:/workspace/output/
+    depends_on:
+      - p2
